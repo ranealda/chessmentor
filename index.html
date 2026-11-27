@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="theme-color" content="#0b1426">
+  <meta name="description" content="Chess Mentor — arena catur pribadi: lawan robot AI Stockfish dan belajar bareng mentor AI.">
+  <title>Chess Mentor</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1426'/%3E%3Ctext x='32' y='47' font-size='40' text-anchor='middle' fill='%238aa65b'%3E%E2%99%9E%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" integrity="sha384-HtMZLkYo+pR5/u7zCzXxMJP6QoNnQJt1qkHM0EaOPvGDIzaVZbmYr/TlvUZ/sKAg" crossorigin="anonymous">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body class="min-h-screen">
+  <a href="#papan" class="skip-link">Lewati ke papan</a>
+
+  <header class="topbar">
+    <div class="wrap flex items-center justify-between h-16">
+      <a href="#papan" class="brand" aria-label="Chess Mentor beranda">
+        <span class="brand-mark" aria-hidden="true">&#9822;&#xFE0E;</span>
+        <span>Chess<span class="text-moss">Mentor</span></span>
+      </a>
+      <nav class="hidden md:flex items-center gap-1" aria-label="Navigasi utama">
+        <a href="#papan" class="nav-link">Main</a>
+        <a href="#panel" class="nav-link" data-tab-link="mentor">Mentor</a>
+        <a href="#panel" class="nav-link" data-tab-link="stats">Statistik</a>
+        <button type="button" class="nav-link" data-open="dlgSettings">Pengaturan</button>
+        <button type="button" class="nav-link" data-open="dlgAbout">Tentang</button>
+      </nav>
+      <button type="button" id="menuBtn" class="icon-btn md:hidden" aria-label="Buka menu" aria-expanded="false" aria-controls="mobileNav">
+        <span class="burger" aria-hidden="true"></span>
+      </button>
+    </div>
+    <nav id="mobileNav" class="mobile-nav md:hidden" aria-label="Navigasi seluler" hidden>
+      <a href="#papan" class="nav-link">Main</a>
+      <a href="#panel" class="nav-link" data-tab-link="mentor">Mentor</a>
+      <a href="#panel" class="nav-link" data-tab-link="stats">Statistik</a>
+      <button type="button" class="nav-link" data-open="dlgSettings">Pengaturan</button>
+      <button type="button" class="nav-link" data-open="dlgAbout">Tentang</button>
+    </nav>
+  </header>
+
+  <main class="wrap py-5 lg:py-8">
+    <section class="hero mb-5">
+      <p class="eyebrow">Arena pribadi kamu</p>
+      <h1 class="hero-title">Siap ditantang, <span id="heroName" class="text-moss">Pemain</span>?</h1>
+      <p class="hero-sub">Lawan robot AI bertenaga Stockfish, lalu dengarkan mentor yang membedah tiap langkahmu.</p>
+    </section>
+
+    <div class="grid gap-5 lg:grid-cols-12">
+      <section id="papan" class="lg:col-span-7 card p-3 sm:p-4" aria-label="Papan catur">
+        <div class="player-row">
+          <div class="player">
+            <span class="avatar bot" aria-hidden="true">&#129302;</span>
+            <div class="min-w-0">
+              <p class="player-name" id="botLabel">Robot AI</p>
+              <p class="player-meta" id="botMeta">Level 5</p>
+            </div>
+          </div>
+          <div class="captured" id="capTop" aria-label="Bidak yang ditangkap robot"></div>
+        </div>
+
+        <div class="board-wrap">
+          <div id="evalBar" class="eval-bar" role="img" aria-label="Bar evaluasi">
+            <div id="evalFill" class="eval-fill"></div>
+            <span id="evalText" class="eval-text">0.0</span>
+          </div>
+          <div id="board" class="board" role="grid" aria-label="Papan catur 8 kali 8"></div>
+        </div>
+
+        <div class="player-row">
+          <div class="player">
+            <span class="avatar me" aria-hidden="true">&#9813;&#xFE0E;</span>
+            <div class="min-w-0">
+              <p class="player-name" id="meLabel">Pemain</p>
+              <p class="player-meta" id="meMeta">Putih</p>
+            </div>
+          </div>
+          <div class="captured" id="capBottom" aria-label="Bidak yang kamu tangkap"></div>
+        </div>
+
+        <p id="statusLine" class="status-line" aria-live="polite">Giliranmu.</p>
+
+        <div class="controls">
+          <button type="button" class="btn btn-primary" id="btnNew">&#9654; Game Baru</button>
+          <button type="button" class="btn" id="btnHint">&#128161; Saran</button>
+          <button type="button" class="btn" id="btnUndo">&#8630; Undo</button>
+          <button type="button" class="btn" id="btnFlip">&#8645; Putar</button>
+          <button type="button" class="btn btn-danger" id="btnResign">&#9873; Menyerah</button>
+        </div>
+      </section>
+
+      <section id="panel" class="lg:col-span-5 card flex flex-col panel" aria-label="Panel mentor">
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab is-active" role="tab" aria-selected="true" data-tab="mentor">Mentor AI</button>
+          <button type="button" class="tab" role="tab" aria-selected="false" data-tab="moves">Langkah</button>
+          <button type="button" class="tab" role="tab" aria-selected="false" data-tab="stats">Statistik</button>
+        </div>
+
+        <div class="tab-pane flex flex-col flex-1 min-h-0" data-pane="mentor">
+          <div class="mentor-head">
+            <span class="avatar mentor" aria-hidden="true">&#129504;</span>
+            <div class="min-w-0">
+              <p class="player-name">Mentor Nara</p>
+              <p class="player-meta"><span id="engineDot" class="dot"></span><span id="engineStatus">Menyiapkan engine…</span></p>
+            </div>
+          </div>
+          <ol id="chat" class="chat" aria-live="polite"></ol>
+          <div class="chips">
+            <button type="button" class="chip" data-ask="kasih saran langkah">&#128161; Saran</button>
+            <button type="button" class="chip" data-ask="evaluasi posisi">&#128202; Evaluasi</button>
+            <button type="button" class="chip" data-ask="pembukaan apa ini">&#128214; Pembukaan</button>
+            <button type="button" class="chip" data-ask="kasih tips">&#127919; Tips</button>
+          </div>
+          <form id="chatForm" class="chat-form" autocomplete="off">
+            <label for="chatInput" class="sr-only">Tanya mentor</label>
+            <input id="chatInput" type="text" maxlength="200" placeholder="Tanya mentor… (mis. rokade itu apa?)" class="input">
+            <button type="submit" class="btn btn-primary" aria-label="Kirim pesan">Kirim</button>
+          </form>
+        </div>
+
+        <div class="tab-pane flex-1 min-h-0" data-pane="moves" hidden>
+          <div class="pane-pad">
+            <p class="label">Pembukaan</p>
+            <p id="openingName" class="opening">Belum terdeteksi</p>
+            <ol id="moveList" class="move-list"></ol>
+            <button type="button" class="btn w-full mt-3" id="btnCopyPgn">&#128203; Salin PGN</button>
+          </div>
+        </div>
+
+        <div class="tab-pane flex-1 min-h-0" data-pane="stats" hidden>
+          <div class="pane-pad">
+            <div class="grid grid-cols-2 gap-3">
+              <div class="stat"><p class="stat-num" id="stWin">0</p><p class="stat-lbl">Menang</p></div>
+              <div class="stat"><p class="stat-num" id="stLoss">0</p><p class="stat-lbl">Kalah</p></div>
+              <div class="stat"><p class="stat-num" id="stDraw">0</p><p class="stat-lbl">Remis</p></div>
+              <div class="stat"><p class="stat-num" id="stStreak">0</p><p class="stat-lbl">Streak menang</p></div>
+            </div>
+            <p class="label mt-4">Akurasi rata-rata (perkiraan)</p>
+            <div class="meter"><div id="accFill" class="meter-fill"></div></div>
+            <p id="accText" class="player-meta mt-1">Belum ada data</p>
+            <button type="button" class="btn btn-danger w-full mt-4" id="btnResetStats">Reset Statistik</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="wrap py-6 footer">
+    <p>Chess Mentor · aplikasi pribadi · engine <a href="https://github.com/nmrugg/stockfish.js" target="_blank" rel="noopener noreferrer">Stockfish.js</a> (GPL)</p>
+  </footer>
+
+  <dialog id="dlgSettings" class="modal" aria-labelledby="setTitle">
+    <form method="dialog" id="settingsForm" class="modal-body">
+      <h2 id="setTitle" class="modal-title">Pengaturan</h2>
+      <label class="field"><span class="label">Nama kamu</span>
+        <input id="setName" type="text" maxlength="20" class="input" placeholder="Pemain">
+      </label>
+      <label class="field"><span class="label">Level robot: <b id="setLevelVal">5</b> · <span id="setLevelName">Menengah</span></span>
+        <input id="setLevel" type="range" min="1" max="10" step="1" class="range">
+      </label>
+      <label class="field"><span class="label">Engine lawan</span>
+        <select id="setEngine" class="input">
+          <option value="stockfish">Stockfish (kuat)</option>
+          <option value="builtin">Bot bawaan (ringan)</option>
+        </select>
+      </label>
+      <label class="field"><span class="label">Main sebagai (game berikutnya)</span>
+        <select id="setColor" class="input">
+          <option value="w">Putih</option>
+          <option value="b">Hitam</option>
+          <option value="r">Acak</option>
+        </select>
+      </label>
+      <label class="toggle"><input id="setCoach" type="checkbox"><span>Komentar mentor otomatis</span></label>
+      <label class="toggle"><input id="setEval" type="checkbox"><span>Tampilkan bar evaluasi</span></label>
+      <label class="toggle"><input id="setHints" type="checkbox"><span>Tandai langkah legal</span></label>
+      <div class="modal-actions">
+        <button type="button" class="btn" data-close>Batal</button>
+        <button type="submit" class="btn btn-primary" id="setSave" value="save">Simpan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgConfirm" class="modal" aria-labelledby="cfTitle">
+    <div class="modal-body">
+      <h2 id="cfTitle" class="modal-title"></h2>
+      <p id="cfText" class="modal-text"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn" id="cfNo">Batal</button>
+        <button type="button" class="btn btn-primary" id="cfYes">Ya</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="dlgPromo" class="modal" aria-labelledby="prTitle">
+    <div class="modal-body">
+      <h2 id="prTitle" class="modal-title">Promosi pion</h2>
+      <div class="promo-grid" id="promoGrid"></div>
+      <div class="modal-actions"><button type="button" class="btn" data-close>Batal</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="dlgAbout" class="modal" aria-labelledby="abTitle">
+    <div class="modal-body">
+      <h2 id="abTitle" class="modal-title">Tentang Chess Mentor</h2>
+      <p class="modal-text">Aplikasi catur pribadi: lawan robot AI (Stockfish 10 lewat WebAssembly, berjalan di browser kamu) dengan 10 level, plus Mentor Nara yang menilai tiap langkah, memberi saran, dan menjawab pertanyaan seputar catur.</p>
+      <p class="modal-text">Semua berjalan offline di perangkatmu. Tidak ada akun, tidak ada API key, data tersimpan di browser ini saja.</p>
+      <div class="modal-actions"><button type="button" class="btn btn-primary" data-close>Oke</button></div>
+    </div>
+  </dialog>
+
+  <div id="toasts" class="toasts" aria-live="assertive"></div>
+</body>
+</html>
